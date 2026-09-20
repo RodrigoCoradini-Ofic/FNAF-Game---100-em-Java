@@ -21,7 +21,7 @@ public class SaveManager {
         try {
             mapper.writerWithDefaultPrettyPrinter()
                     .writeValue(arquivo, dados);
-            System.out.println("Jogo salvo!");
+            System.out.println("Jogo salvo com Sucesso!");
         } catch (IOException e) {
             System.out.println("Erro ao salvar o jogo.");
             e.printStackTrace();

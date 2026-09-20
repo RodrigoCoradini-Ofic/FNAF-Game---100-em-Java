@@ -20,9 +20,11 @@ public class Game {
     protected Camera camera;
     protected Energy energy;
     protected String menu;
+    protected boolean jogadorSobreviveu;
 
     // Constantes
     protected static final int TEMPO_CADA_EXECUCAO = 5;
+    protected static final int SEGUNDOS_POR_HORA = 60;
     public static final String TEXTO_NEGRITO = "\u001B[1m";
     public static final String TEXTO_RESET = "\u001B[0m";
 
@@ -30,14 +32,14 @@ public class Game {
     public Game(int idNoite) {
         this.idNoite = idNoite;
         this.jogadorMorto = false;
+        this.jogadorSobreviveu = false;
         this.world = new World();
         this.dificuldade = Difficulty.getMultiplicador(idNoite);
         this.relogio = new Relogio();
-        this.energy = new Energy(TEMPO_CADA_EXECUCAO);
+        this.energy = new Energy(SEGUNDOS_POR_HORA);
         this.gameScheduler = new GameScheduler(relogio, world.animatronics, idNoite, energy, TEMPO_CADA_EXECUCAO, world.doors);
         this.gameScheduler.iniciar();
         this.iniciarInterfaceJogador(world.doors);
-
     }
 
     // Iniciando a Interface do Jogador...
@@ -65,10 +67,10 @@ public class Game {
                 world.doors.get(1).fecharPorta();
             }
             if (resposta.equals("3")) {
-                world.doors.get(0).abrirPorta();
+                world.doors.getFirst().abrirPorta();
             }
             if (resposta.equals("4")) {
-                world.doors.get(0).fecharPorta();
+                world.doors.getFirst().fecharPorta();
             }
             if (resposta.equals("5")) {
                 this.camera = new Camera(world.rooms, world.animatronics, this);
@@ -91,7 +93,7 @@ public class Game {
                 this.matarJogador(gameScheduler.animatronicQueMatou);
                 break;
             }
-        }
+        }this.jogadorGanhou();// Se o tempo acabar e Jogador não morrer, Printa sobreviveu
     }
 
     // Gerar a Interface
@@ -133,17 +135,30 @@ public class Game {
                 eventoAleatorio);// Gerar Evento Aleatorio
     }
 
+    // Interface de Vitória
+    public void jogadorGanhou(){
+        this.jogadorSobreviveu = true;
+        System.out.printf("""
+                ============================================================================
+                |                         %s Você Sobreviveu %s                            |
+                ============================================================================
+                |       06:00 AM — O turno terminou. Por enquanto, você está Seguro.
+                |
+                ----------------------------------------------------------------------------
+                """, TEXTO_NEGRITO, TEXTO_RESET);
+    }
+
     // Matar o Jogador
     public void matarJogador(Animatronics animatronic) {
         this.jogadorMorto = true;
 
-        System.out.println("""
+        System.out.printf("""
                 ============================================================================
                 |                         %s  Você Morreu %s                               |
                 ============================================================================
                 %s
                 ----------------------------------------------------------------------------
-                """.formatted(TEXTO_NEGRITO, TEXTO_RESET,animatronic));
+                %n""", TEXTO_NEGRITO, TEXTO_RESET,animatronic);
     }
 
     // GETTERs
@@ -153,5 +168,9 @@ public class Game {
 
     public World getWorld() {
         return world;
+    }
+
+    public boolean isJogadorSobreviveu() {
+        return jogadorSobreviveu;
     }
 }
