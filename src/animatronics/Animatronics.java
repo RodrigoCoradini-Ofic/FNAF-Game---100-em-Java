@@ -109,11 +109,11 @@ public abstract class Animatronics {
 //                                        + " | Chance: " + chanceMovimento);
                         return false;
                     }if (porcentagem <= ((int) chanceMovimento + (int) chanceDeVoltar)) {
-                        // Se as probabilidades não forem à favor, volta
-                        this.movimentarTras();
+                        // Se as probabilidades não forem à favor, fica Parado
                         return false;
                     }else {
-                        // Fica Parado
+                        // Volta um comodo
+                        this.movimentarTras();
                         return false;
                     }
             }
