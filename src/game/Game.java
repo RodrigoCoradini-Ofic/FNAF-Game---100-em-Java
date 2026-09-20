@@ -2,8 +2,11 @@
 package game;
 import animatronics.Animatronics;
 import map.Camera;
+import map.Door;
 import systems.Difficulty;
+import systems.Energy;
 import systems.Relogio;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 // iniciando o game
@@ -15,6 +18,13 @@ public class Game {
     protected GameScheduler gameScheduler;
     protected boolean jogadorMorto;
     protected Camera camera;
+    protected Energy energy;
+    protected String menu;
+
+    // Constantes
+    protected static final int TEMPO_CADA_EXECUCAO = 5;
+    public static final String TEXTO_NEGRITO = "\u001B[1m";
+    public static final String TEXTO_RESET = "\u001B[0m";
 
     // Construtor do game
     public Game(int idNoite) {
@@ -23,13 +33,15 @@ public class Game {
         this.world = new World();
         this.dificuldade = Difficulty.getMultiplicador(idNoite);
         this.relogio = new Relogio();
-        this.gameScheduler = new GameScheduler(relogio, world.animatronics, idNoite);
+        this.energy = new Energy(TEMPO_CADA_EXECUCAO);
+        this.gameScheduler = new GameScheduler(relogio, world.animatronics, idNoite, energy, TEMPO_CADA_EXECUCAO, world.doors);
         this.gameScheduler.iniciar();
-        this.iniciarInterfaceJogador();
+        this.iniciarInterfaceJogador(world.doors);
+
     }
 
     // Iniciando a Interface do Jogador...
-    public void iniciarInterfaceJogador() {
+    public void iniciarInterfaceJogador(ArrayList<Door> doors) {
         Scanner entrada = new Scanner(System.in);
 
         // Iniciando o Loop
@@ -41,21 +53,8 @@ public class Game {
                 this.matarJogador(gameScheduler.animatronicQueMatou);
                 break;
             }
-            String menu = """
-                    ================================
-                    |        Sala Segurança        |
-                    ================================
-                    | Noite %d        Energia: 78  |
-                    | Horas 0%d:00
-                    |
-                    | - [1] Abrir Porta Direita
-                    | - [2] Fechar Porta Direita
-                    |
-                    | - [3] Abrir Porta Esquerda
-                    | - [4] Fechar Porta Esquerda
-                    |
-                    | - [5] Ver Câmeras
-                    """.formatted(idNoite, relogio.getHora());
+            // Iniciando a Interface
+            this.gerarInterfaceGame(gameScheduler.getDescricaoEventoAleatorio());
             System.out.println(menu);
             String resposta = entrada.nextLine();
             // Tratando Saídas
@@ -73,7 +72,16 @@ public class Game {
             }
             if (resposta.equals("5")) {
                 this.camera = new Camera(world.rooms, world.animatronics, this);
+                this.camera.menuCameras();
                 return;
+            }
+            if (resposta.equals("6")) {
+                this.camera = new Camera(world.rooms, world.animatronics, this);
+                this.camera.ligarLuz(world.rooms.get(7));
+            }
+            if (resposta.equals("7")) {
+                this.camera = new Camera(world.rooms, world.animatronics, this);
+                this.camera.ligarLuz(world.rooms.get(4));
             }
             // Se escrever errado, reinicia interface
             // Verificando se o Jogador Morreu
@@ -86,20 +94,64 @@ public class Game {
         }
     }
 
+    // Gerar a Interface
+    public void gerarInterfaceGame(String eventoAleatorio) {
+        // Verificar se a porta está fechada para Printar na tela
+        boolean verificaPortaEsquerda = false;
+        boolean verificaPortaDireita = false;
+        for (Door door : this.world.doors) {
+            if (door.getIdDoor() == 1) {
+                if (!door.estaFechado()){
+                    verificaPortaEsquerda = true;
+                }
+            }
+            if (door.getIdDoor() == 2) {
+                if (!door.estaFechado()){
+                    verificaPortaDireita = true;
+                }
+            }
+        }
+        this.menu = """
+                    ============================================================================
+                    |                            %s Sala Segurança %s                          |
+                    ============================================================================
+                    |     Noite %d                                       Energia: %d %%        |
+                    |     Horas 0%d:00
+                    |
+                    | - [1] Abrir Porta Direita     (%s)              [6] Ligar Luz Direita
+                    | - [2] Fechar Porta Direita
+                    |
+                    | - [3] Abrir Porta Esquerda     (%s)             [7] Ligar Luz Esquerda
+                    | - [4] Fechar Porta Esquerda
+                    |
+                    | - [5] Ver Câmeras
+                    ----------------------------------------------------------------------------
+                    %s
+                    """.formatted(TEXTO_NEGRITO, TEXTO_RESET, idNoite, (int) energy.getEnergia(), relogio.getHora(),
+                verificaPortaDireita ? "Aberta" : "Fechada",
+                verificaPortaEsquerda ? "Aberta" : "Fechada",
+                eventoAleatorio);// Gerar Evento Aleatorio
+    }
+
     // Matar o Jogador
     public void matarJogador(Animatronics animatronic) {
         this.jogadorMorto = true;
 
         System.out.println("""
-                ================================
-                          Você Morreu
-                ================================
+                ============================================================================
+                |                         %s  Você Morreu %s                               |
+                ============================================================================
                 %s
-                """.formatted(animatronic));
+                ----------------------------------------------------------------------------
+                """.formatted(TEXTO_NEGRITO, TEXTO_RESET,animatronic));
     }
 
     // GETTERs
     public boolean isJogadorMorto() {
         return jogadorMorto;
+    }
+
+    public World getWorld() {
+        return world;
     }
 }

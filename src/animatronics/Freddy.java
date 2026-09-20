@@ -20,9 +20,4 @@ public class Freddy extends Animatronics {
     public void movimentarFrente() {
         super.movimentarFrente();
     }
-
-    @Override
-    public String toString() {
-        return this.fraseMorte;
-    }
 }

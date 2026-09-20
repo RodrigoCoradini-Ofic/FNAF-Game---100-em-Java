@@ -11,7 +11,6 @@ public class Difficulty {
 
     // MUltiplicador de Dificuldade
     public static double getMultiplicador(int noite) {
-
         // Caso (Noite1) -> Retorne (Dificuldade)
         return switch (noite) {
             case 1 -> DIFICULDADE_NOITE_1;

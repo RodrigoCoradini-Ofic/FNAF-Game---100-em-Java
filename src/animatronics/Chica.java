@@ -1,6 +1,5 @@
 // Importando Bibliotecas
 package animatronics;
-
 import map.Room;
 
 public class Chica extends Animatronics {
@@ -19,10 +18,5 @@ public class Chica extends Animatronics {
     @Override
     public void movimentarFrente() {
         super.movimentarFrente();
-    }
-
-    @Override
-    public String toString() {
-        return this.fraseMorte;
     }
 }

@@ -12,6 +12,7 @@ public abstract class Animatronics {
     protected Room localizacao;
     protected double agressividadeBase;
     protected String fraseMorte;
+    protected String descricaoEstado;
 
     // Constantes
     protected static final double CHANCE_MOVIMENTACAO = 0.30;
@@ -102,10 +103,10 @@ public abstract class Animatronics {
                     if (porcentagem <= (int) chanceMovimento) {
                         // Se as probabilidades forem à favor, se movimenta pra Frente
                         this.movimentarFrente();
-                        System.out.println(
-                                nome + " | Local: " + localizacao.getNome()
-                                        + " | Agressividade: " + agressividadeEfetiva
-                                        + " | Chance: " + chanceMovimento);
+//                        System.out.println(
+//                                nome + " | Local: " + localizacao.getNome()
+//                                        + " | Agressividade: " + agressividadeEfetiva
+//                                        + " | Chance: " + chanceMovimento);
                         return false;
                     }if (porcentagem <= ((int) chanceMovimento + (int) chanceDeVoltar)) {
                         // Se as probabilidades não forem à favor, volta
@@ -131,6 +132,11 @@ public abstract class Animatronics {
             return false;
         }
     }
+    // Reencrevendo o ToString
+    @Override
+    public String toString() {
+        return " %s \n Morreu para: %s".formatted(this.getFraseMorte(), this.getNome());
+    }
 
     // GETs
     public Room getLocalizacao() {
@@ -147,5 +153,9 @@ public abstract class Animatronics {
 
     public double getAgressividadeBase() {
         return agressividadeBase;
+    }
+
+    public String getDescricaoEstado() {
+        return descricaoEstado;
     }
 }

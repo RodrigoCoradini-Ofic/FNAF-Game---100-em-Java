@@ -97,22 +97,14 @@ public class World {
 
     // Instaciando as Portas...
     public void iniciarDoors(){
-        Door portaEsquerda = new Door();
+        Door portaEsquerda = new Door(1);
         doors.add(portaEsquerda);
-        Door portaDireita = new Door();
+        Door portaDireita = new Door(2);
         doors.add(portaDireita);
     }
-}
 
-// Iniciando os Comodos...
-//        Room showState = new Room("Show State", 1);
-//        Room diningArea = new Room("Dining Area", 2);
-//        Room pirateCove = new Room("Pirate Cove", 3);
-//        Room westHall = new Room("West Hall", 4);
-//        Room westHallCorner = new Room("West Hall Corner", 5);
-//        Room supplyCloset = new Room("Supply Closet", 6);
-//        Room eastHall = new Room("East Hall", 7);
-//        Room eastHallCorner = new Room("East Hall Corner", 8);
-//        Room Backstage = new Room("Backstage", 9);
-//        Room Kitchen = new Room("Kitchen", 10);
-//        Room Restrooms = new Room("Restrooms", 11);
+    // GETTERs
+    public ArrayList<Door> getDoors() {
+        return doors;
+    }
+}
