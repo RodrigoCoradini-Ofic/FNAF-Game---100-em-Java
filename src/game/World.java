@@ -9,11 +9,12 @@ import java.util.ArrayList;
 public class World {
     protected ArrayList<Door> doors;
     protected ArrayList<Room> rooms;
-
     protected ArrayList<Animatronics> animatronics;
+    protected double dificuldade;
 
     // Construtor do World
-    public World() {
+    public World(double dificuldade) {
+        this.dificuldade = dificuldade;
         this.doors = new ArrayList<>();
         iniciarDoors();
         this.rooms = new ArrayList<>();
@@ -25,17 +26,19 @@ public class World {
     // Iniciando os Comodos...
     public void iniciarComodos(){
         // Instanciar Cômodos
-        Room palcoPrincipal = new Room("Palco Principal", 1,     "O palco principal permanece imóvel sob luzes fracas. As cortinas estão abertas, revelando...");
-        Room salao = new Room("Salão", 2,     "Mesas vazias ocupam o salão, iluminadas por lâmpadas que piscam ocasionalmente. Balões e desenhos infantis decoram as paredes.");
-        Room cavernaPirata = new Room("Caverna Pirata", 3,     "Uma pequena área temática de piratas surge atrás de cortinas vermelhas. A iluminação é quase inexistente, tornando difícil enxergar o que há atrás delas.");
-        Room corredorEsquerdo = new Room("Corredor Esquerdo", 4,     "Um corredor estreito se estende até a escuridão. As paredes exibem desenhos infantis antigos, enquanto uma luz fraca ilumina apenas parte do caminho.");
-        Room portaEsquerda = new Room("Porta Esquerda", 5,     "O corredor termina em um canto escuro, próximo ao escritório. A câmera mal consegue alcançar o fim do corredor.");
-        Room depositoDeMateriais = new Room("Depósito de Materiais", 6,     "Caixas, peças e objetos esquecidos estão empilhados em um pequeno depósito. O espaço parece apertado demais para alguém se esconder ali...");
-        Room corredorDireito = new Room("Corredor Direito", 7,     "Outro corredor vazio atravessa a pizzaria. As luzes são fracas e o silêncio contrasta com os desenhos coloridos espalhados pelas paredes.");
-        Room portaDireita = new Room("Porta Direita", 8,     "O corredor termina diante da porta do escritório. A iluminação falha por alguns instantes, deixando o canto completamente escuro.");
-        Room areaDosBastidores = new Room("Área dos Bastidores", 9,         "Peças de animatrônicos e equipamentos antigos estão espalhados pelo ambiente. Rostos mecânicos observam a câmera de lugares diferentes.");
-        Room cozinha = new Room("Cozinha", 10,     "A cozinha permanece mergulhada na escuridão. Panelas e equipamentos podem ser vistos apenas parcialmente, enquanto sons metálicos ecoam pelo ambiente.");
-        Room banheiros = new Room("Banheiros", 11,     "Os banheiros estão vazios e silenciosos. Azulejos antigos e luzes fluorescentes criam uma atmosfera fria e desconfortável.");
+        Room palcoPrincipal = new Room(Room.TipoComodo.PALCO);
+        Room salao = new Room(Room.TipoComodo.SALAO);
+        Room cavernaPirata = new Room(Room.TipoComodo.CAVERNA_PIRATA);
+        Room corredorEsquerdo = new Room(Room.TipoComodo.CORREDOR_ESQUERDO);
+        Room cantoEsquerdo = new Room(Room.TipoComodo.CANTO_ESQUERDO);
+        Room depositoDeMateriais = new Room(Room.TipoComodo.DEPOSITO_MATERIAIS);
+        Room corredorDireito = new Room(Room.TipoComodo.CORREDOR_DIREITO);
+        Room cantoDireito = new Room(Room.TipoComodo.CANTO_DIREITO);
+        Room areaDosBastidores = new Room(Room.TipoComodo.AREA_DOS_BASTIDORES);
+        Room cozinha = new Room(Room.TipoComodo.COZINHA);
+        Room banheiros = new Room(Room.TipoComodo.BANHEIRO);
+        Room escritorioPortaEsquerda = new Room(Room.TipoComodo.ESCRITORIO_PORTA_ESQUERDA);
+        Room escritorioPortaDireita= new Room(Room.TipoComodo.ESCRITORIO_PORTA_DIREITA);
 
         // Adidionando Antecedentes e Sucessores
         palcoPrincipal.adicionarComodoDepois(salao);
@@ -45,51 +48,57 @@ public class World {
         salao.adicionarComodoDepois(corredorDireito);
         cavernaPirata.adicionarComodoDepois(corredorEsquerdo);
         corredorEsquerdo.adicionarComodoAntes(salao);
-        corredorEsquerdo.adicionarComodoDepois(portaEsquerda);
-        portaEsquerda.adicionarComodoAntes(corredorEsquerdo);
+        corredorEsquerdo.adicionarComodoDepois(cantoEsquerdo);
+        cantoEsquerdo.adicionarComodoAntes(corredorEsquerdo);
+        cantoEsquerdo.adicionarComodoDepois(escritorioPortaEsquerda);
         depositoDeMateriais.adicionarComodoAntes(areaDosBastidores);
         depositoDeMateriais.adicionarComodoDepois(corredorDireito);
         corredorDireito.adicionarComodoAntes(salao);
-        corredorDireito.adicionarComodoDepois(portaDireita);
-        portaDireita.adicionarComodoAntes(corredorDireito);
+        corredorDireito.adicionarComodoDepois(cantoDireito);
+        cantoDireito.adicionarComodoAntes(corredorDireito);
+        cantoDireito.adicionarComodoDepois(escritorioPortaDireita);
         areaDosBastidores.adicionarComodoAntes(palcoPrincipal);
         areaDosBastidores.adicionarComodoDepois(depositoDeMateriais);
         cozinha.adicionarComodoAntes(banheiros);
         banheiros.adicionarComodoAntes(salao);
         banheiros.adicionarComodoDepois(corredorDireito);
         banheiros.adicionarComodoDepois(cozinha);
+        escritorioPortaEsquerda.adicionarComodoAntes(cantoEsquerdo);
+        escritorioPortaDireita.adicionarComodoAntes(cantoDireito);
 
         // Conectar Doors
-        portaEsquerda.conectarDoor(doors.getFirst());
-        portaDireita.conectarDoor(doors.get(1));
+        escritorioPortaEsquerda.conectarDoor(doors.getFirst());
+        escritorioPortaDireita.conectarDoor(doors.get(1));
 
         // Adicionando a Lista
         rooms.add(palcoPrincipal);
         rooms.add(salao);
         rooms.add(cavernaPirata);
         rooms.add(corredorEsquerdo);
-        rooms.add(portaEsquerda);
+        rooms.add(cantoEsquerdo);
         rooms.add(depositoDeMateriais);
         rooms.add(corredorDireito);
-        rooms.add(portaDireita);
+        rooms.add(cantoDireito);
         rooms.add(areaDosBastidores);
         rooms.add(cozinha);
         rooms.add(banheiros);
+        rooms.add(escritorioPortaEsquerda);
+        rooms.add(escritorioPortaDireita);
     }
 
     // Iniciando os Animatronics...
     public void iniciarAnimatronics(){
         for(Room room : rooms){
-            if(room.getNome().equals("Palco Principal")){
-                Bonnie bonnie = new Bonnie(room);
+            if(room.getNome().equals(Room.TipoComodo.PALCO.getNome())){
+                Bonnie bonnie = new Bonnie(room, this.dificuldade);
                 animatronics.add(bonnie);
-                Chica chica = new Chica(room);
+                Chica chica = new Chica(room, this.dificuldade);
                 animatronics.add(chica);
-                Freddy freddy = new Freddy(room);
+                Freddy freddy = new Freddy(room, this.dificuldade);
                 animatronics.add(freddy);
             }
-            if(room.getNome().equals("Caverna Pirata")){
-                Foxy foxy = new Foxy(room);
+            if(room.getNome().equals(Room.TipoComodo.CAVERNA_PIRATA.getNome())){
+                Foxy foxy = new Foxy(room, this.dificuldade);
                 animatronics.add(foxy);
             }
         }

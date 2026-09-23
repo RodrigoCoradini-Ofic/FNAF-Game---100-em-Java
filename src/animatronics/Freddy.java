@@ -6,18 +6,13 @@ import map.Room;
 public class Freddy extends Animatronics {
 
     // Construtor do Bonnie
-    public Freddy(Room room) {
+    public Freddy(Room room, double dificuldade) {
         super(
                 "Freddy",
                 1.6,
-                "A festa só termina quando eu digo."
+                "A festa só termina quando eu digo.",
+                dificuldade
         );
         this.localizacao = room;
-    }
-
-    // Reescrevendo a Lógica de Movimentação
-    @Override
-    public void movimentarFrente() {
-        super.movimentarFrente();
     }
 }

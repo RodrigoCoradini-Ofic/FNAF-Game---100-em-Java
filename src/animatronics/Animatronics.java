@@ -2,7 +2,6 @@
 package animatronics;
 import map.Door;
 import map.Room;
-
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -13,125 +12,190 @@ public abstract class Animatronics {
     protected double agressividadeBase;
     protected String fraseMorte;
     protected String descricaoEstado;
+    protected Random random;
+    protected double dificuldade;
+    protected boolean atacando;
+    protected long inicioAtaque;
+    protected double agressividadeEfetiva;
+    protected double chanceMovimento;
 
     // Constantes
+    public static final double PORCENTAGEM_CONVERTIDA_EM_CHANCE_PARADO = 0.2;
     protected static final double CHANCE_MOVIMENTACAO = 0.30;
+    protected static final int PORCENTAGEM_CHANCE_IR_PERTO_JOGADOR = 60;
+    protected static final long TEMPO_ATAQUE = 3000;
+    protected static final int KEEP_CHANCE_MOVIMENTO = 70;
+
+    // Enum da Situação do Movimento -- Onde o Animatronic Está
+    public enum SituacaoMovimento {
+        PORTA_ESQUERDA,
+        PORTA_DIREITA,
+        NO_CAMINHO,
+        SEM_CAMINHO,
+        CORRENDO // Exclusivo do Foxy
+    }
 
     // Construtor dos Animatronics
-    public Animatronics(String nome, double agressividadeBase, String fraseMorte) {
+    public Animatronics(String nome, double agressividadeBase, String fraseMorte, double dificuldade) {
         this.nome = nome;
         this.agressividadeBase = agressividadeBase;
         this.fraseMorte = fraseMorte;
+        this.dificuldade = dificuldade;
+        this.atacando = false;
+        this.inicioAtaque = 0;
+        this.random = new Random();
     }
 
     // Lógica de Movimentação pra frente
-    public void movimentarFrente() {
-        try {
-            // Se Movimenta: Com 70% de chance de ir mais perto do jogador
-            ArrayList<Room> destinos = localizacao.getComodoDepois();
-            if (destinos.isEmpty()) {
-                return;
-            }
-            Random random = new Random();
-            // Se só existe um destino
-            if (destinos.size() == 1) {
-                this.localizacao = destinos.getFirst();
-                return;
-            }
-            int porcentagem = random.nextInt(100) + 1;
-            // 70% → primeiro caminho
-            if (porcentagem <= 70) {
-                this.localizacao = destinos.getFirst();
-            } else {
-                // 30% → qualquer um dos outros caminhos
-                int indice = 1 + random.nextInt(destinos.size() - 1);
-                this.localizacao = destinos.get(indice);
-            }
-        } catch (Exception e) {
-            System.out.println("Erro ao movimentar Frente");
-            e.printStackTrace();
+    protected void movimentarFrente() {
+        // Se Movimenta: Com N% de chance de ir mais perto do jogador
+        ArrayList<Room> destinos = localizacao.getComodoDepois();
+        Room origem = this.localizacao;
+        if (destinos.isEmpty()) {
+            return;}
+        // Se só existe um destino
+        if (destinos.size() == 1) {
+            this.localizacao = destinos.getFirst();
+            return;}
+        int porcentagem = random.nextInt(100) + 1;
+        // N% → primeiro caminho
+        if (porcentagem <= PORCENTAGEM_CHANCE_IR_PERTO_JOGADOR) {
+            this.localizacao = destinos.getFirst();
+        } else {
+            // Total-N% → qualquer um dos outros caminhos
+            int indice = 1 + random.nextInt(destinos.size() - 1);
+            this.localizacao = destinos.get(indice);
+//            System.out.printf(
+//                    "%s | Local: %s | Agressividade: %.2f | Chance: %.2f%n",
+//                    nome, localizacao.getNome(), getAgressividadeEfetiva(), getChanceMovimento());
+//            System.out.println(
+//                    nome +
+//                            " | De: " + origem.getNome() +
+//                            " | Para: " + localizacao.getNome());
         }
     }
 
     // Lógica de Movimentação pra Trás
-    public void movimentarTras() {
-        try {
-            // Se Movimenta pra Trás
-            Random random = new Random();
-            if (localizacao.getComodoAntes().isEmpty()) {
-                return;
-            }
+    protected void movimentarTras() {
+        // Se Movimenta pra Trás
+        if (localizacao.getComodoAntes().isEmpty()) {
+            return;}
+        int indice = random.nextInt(localizacao.getComodoAntes().size());
 
-            int indice = random.nextInt(localizacao.getComodoAntes().size());
-
-            this.localizacao = localizacao.getComodoAntes().get(indice);
-        } catch (Exception e) {
-            System.out.println("Erro ao movimentar Tras");
-            e.printStackTrace();
-        }
+        this.localizacao = localizacao.getComodoAntes().get(indice);
     }
 
     // Lógica de Tentar movimentar
-    public boolean tentaMovimentar(int idNoite, Door door) throws InterruptedException {
-        // Tenta atacar
-        boolean resultadoAtacar = this.atacar(door);
-        // Se Matou o Jogador Encerra
-        if (resultadoAtacar) {
-            return true;
-        } else if (localizacao.getNome().equals("Porta Esquerda") || localizacao.getNome().equals("Porta Direita")){
-                // Se não matou e está na porta, escolhe entre voltar ou esperar
-                Random random = new Random();
-                if(random.nextInt(2) == 0 && !localizacao.getComodoAntes().isEmpty()){
-                    this.movimentarTras();// Volta
-                    return false;
-                }else return false; // Fica Parado
-        } else{ // Se não matou, e não está na porta, tenta se mover
-                // Chance de Movimentação
-                    ArrayList<Room> destinos = localizacao.getComodoDepois();
-                    if (destinos.isEmpty()) {
-                        System.out.println(nome + " não possui caminho para frente.");
-                        return false;
-                    }
-                    double agressividadeEfetiva = getAgressividadeBase() * idNoite;
-                    double chanceMovimento = CHANCE_MOVIMENTACAO * 100 + agressividadeEfetiva * 3;
-                    chanceMovimento = Math.min(chanceMovimento, 70);
-                    Random random = new Random();
-                    double chanceQueSobra = 100 - chanceMovimento;
-                    double chanceDeVoltar = chanceQueSobra * 0.3;
-                    // Verificar Porcentagem...
-                    int porcentagem = random.nextInt(100) + 1;
-                    if (porcentagem <= (int) chanceMovimento) {
-                        // Se as probabilidades forem à favor, se movimenta pra Frente
-                        this.movimentarFrente();
-//                        System.out.println(
-//                                nome + " | Local: " + localizacao.getNome()
-//                                        + " | Agressividade: " + agressividadeEfetiva
-//                                        + " | Chance: " + chanceMovimento);
-                        return false;
-                    }if (porcentagem <= ((int) chanceMovimento + (int) chanceDeVoltar)) {
-                        // Se as probabilidades não forem à favor, fica Parado
-                        return false;
-                    }else {
-                        // Volta um comodo
-                        this.movimentarTras();
-                        return false;
-                    }
+    public boolean tentaMovimentar(Door door) {
+        SituacaoMovimento situacao = getSituacaoMovimento();
+
+        return switch (situacao) {
+            case PORTA_ESQUERDA, PORTA_DIREITA -> lidarComPorta(door);
+            case NO_CAMINHO -> decisaoMovimentacao();
+            case CORRENDO -> false; // Tratamento necessario -- Foxy
+            case SEM_CAMINHO -> {
+                System.out.println(nome + " não possui caminho para frente.");
+                yield false;
             }
+        };
+    }
+
+    // Faz a decisão da Movimentação
+    protected boolean decisaoMovimentacao() {
+        double chanceMovimento = calcularChanceMovimento();
+        double chanceRestante = 100 - chanceMovimento;
+        double chanceParado = chanceRestante * PORCENTAGEM_CONVERTIDA_EM_CHANCE_PARADO;
+
+        int porcentagem = random.nextInt(100) + 1;
+
+        // Vai pra Frente
+        if (porcentagem <= chanceMovimento) {
+            movimentarFrente();
+            return false;}
+        // Fica Parado
+        if (porcentagem <= chanceMovimento + chanceParado) {
+            return false;}
+        // Volta
+        movimentarTras();
+        return false;
+    }
+
+    // Metodo para Lidar com a Porta
+    protected boolean lidarComPorta(Door door) {
+        // Se está na Porta, tenta Atacar
+        if (atacar(door)) {
+            return true;}
+
+        boolean podeVoltar = !localizacao.getComodoAntes().isEmpty();
+        boolean deveVoltar = random.nextInt(2) == 0; //50%
+
+        // Se tiver pra onde voltar e der True, Volta
+        if (podeVoltar && deveVoltar) {
+            this.movimentarTras();}
+        return false;
+    }
+
+    // Metodo para Calcular a Chance de Movimento
+    protected double calcularChanceMovimento() {
+        this.agressividadeEfetiva = this.getAgressividadeBase() * this.dificuldade;
+        this.chanceMovimento = CHANCE_MOVIMENTACAO * 100 + this.agressividadeEfetiva * 3;
+        return Math.min(this.chanceMovimento, KEEP_CHANCE_MOVIMENTO);
     }
 
     // Lógica Ataque
-    public boolean atacar(Door  door) throws InterruptedException {
-        // Verifica Porta e Comodo
-        if(localizacao.getNome().equals("Porta Esquerda") && !door.estaFechado() || localizacao.getNome().equals("Porta Direita") && !door.estaFechado()){
-            // Cowndown
-            Thread.sleep(3000);
-            //Matar
-            return true;
-        } else{
-            // Não matou
-            return false;
-        }
+    protected boolean atacar(Door door) {
+        if (!estaNaPorta()) {
+            return false;}
+        if (door.estaFechado()) {
+            cancelarAtaque();
+            return false;}
+        if (!atacando) {
+            iniciarAtaque();
+            return false;}
+        return verificarAtaque();
     }
+
+    // Verifica se o Animatronic está na porta
+    protected boolean estaNaPorta() {
+        return localizacao.getNome().equals(Room.TipoComodo.ESCRITORIO_PORTA_ESQUERDA.getNome()) ||
+                localizacao.getNome().equals(Room.TipoComodo.ESCRITORIO_PORTA_DIREITA.getNome());
+    }
+
+    // Inicia o Ataque
+    protected void iniciarAtaque() {
+        this.atacando = true;
+        this.inicioAtaque = System.currentTimeMillis();
+    }
+
+    // Verifica se o tempo de Ataque acabou
+    protected boolean verificarAtaque() {
+        long tempoPassado = System.currentTimeMillis() - inicioAtaque;
+
+        if (tempoPassado >= TEMPO_ATAQUE) {
+            atacando = false;
+            return true;}
+        return false;
+    }
+
+    // Cancela o Ataque
+    protected void cancelarAtaque() {
+        atacando = false;
+        inicioAtaque = 0;
+    }
+
+    // Metodo para pegar a Situação do Movimento
+    public SituacaoMovimento getSituacaoMovimento() {
+        String nomeComodo = localizacao.getNome();
+
+        if (nomeComodo.equals(Room.TipoComodo.ESCRITORIO_PORTA_ESQUERDA.getNome())) {
+            return SituacaoMovimento.PORTA_ESQUERDA;}
+        if (nomeComodo.equals(Room.TipoComodo.ESCRITORIO_PORTA_DIREITA.getNome())) {
+            return SituacaoMovimento.PORTA_DIREITA;}
+        if (localizacao.getComodoDepois().isEmpty()) {
+            return SituacaoMovimento.SEM_CAMINHO;}
+        return SituacaoMovimento.NO_CAMINHO;
+    }
+
     // Reencrevendo o ToString
     @Override
     public String toString() {
@@ -157,5 +221,13 @@ public abstract class Animatronics {
 
     public String getDescricaoEstado() {
         return descricaoEstado;
+    }
+
+    public double getAgressividadeEfetiva() {
+        return agressividadeEfetiva;
+    }
+
+    public double getChanceMovimento() {
+        return chanceMovimento;
     }
 }

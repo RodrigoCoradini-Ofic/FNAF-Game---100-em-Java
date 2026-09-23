@@ -21,9 +21,10 @@ public class Game {
     protected Energy energy;
     protected String menu;
     protected boolean jogadorSobreviveu;
+    protected Scanner scanner;
 
     // Constantes
-    protected static final int TEMPO_CADA_EXECUCAO = 5;
+    protected static final int TEMPO_CADA_EXECUCAO = 2;
     protected static final int SEGUNDOS_POR_HORA = 60;
     public static final String TEXTO_NEGRITO = "\u001B[1m";
     public static final String TEXTO_RESET = "\u001B[0m";
@@ -31,21 +32,21 @@ public class Game {
     // Construtor do game
     public Game(int idNoite) {
         this.idNoite = idNoite;
+        this.scanner = new Scanner(System.in);
         this.jogadorMorto = false;
         this.jogadorSobreviveu = false;
-        this.world = new World();
         this.dificuldade = Difficulty.getMultiplicador(idNoite);
+        this.world = new World(this.dificuldade);
+        this.camera = new Camera(world.rooms, world.animatronics, this);
         this.relogio = new Relogio();
         this.energy = new Energy(SEGUNDOS_POR_HORA);
-        this.gameScheduler = new GameScheduler(relogio, world.animatronics, idNoite, energy, TEMPO_CADA_EXECUCAO, world.doors);
+        this.gameScheduler = new GameScheduler(relogio, world.animatronics, energy, TEMPO_CADA_EXECUCAO, world.doors, camera);
         this.gameScheduler.iniciar();
         this.iniciarInterfaceJogador(world.doors);
     }
 
     // Iniciando a Interface do Jogador...
     public void iniciarInterfaceJogador(ArrayList<Door> doors) {
-        Scanner entrada = new Scanner(System.in);
-
         // Iniciando o Loop
         while (!relogio.isNoiteTerminou() && !jogadorMorto) {
             // Verificando se o Jogador Morreu
@@ -55,26 +56,27 @@ public class Game {
                 this.matarJogador(gameScheduler.animatronicQueMatou);
                 break;
             }
+            // Verifica Energia
+            verificaEnergia();
             // Iniciando a Interface
             this.gerarInterfaceGame(gameScheduler.getDescricaoEventoAleatorio());
             System.out.println(menu);
-            String resposta = entrada.nextLine();
+            String resposta = this.scanner.nextLine();
             // Tratando Saídas
             if (resposta.equals("1")) {
                 world.doors.get(1).abrirPorta();
             }
             if (resposta.equals("2")) {
-                world.doors.get(1).fecharPorta();
+                world.doors.get(1).fecharPorta(this.energy);
             }
             if (resposta.equals("3")) {
                 world.doors.getFirst().abrirPorta();
             }
             if (resposta.equals("4")) {
-                world.doors.getFirst().fecharPorta();
+                world.doors.getFirst().fecharPorta(this.energy);
             }
             if (resposta.equals("5")) {
-                this.camera = new Camera(world.rooms, world.animatronics, this);
-                this.camera.menuCameras();
+                this.camera.menuCameras(this.energy);
                 return;
             }
             if (resposta.equals("6")) {
@@ -93,7 +95,22 @@ public class Game {
                 this.matarJogador(gameScheduler.animatronicQueMatou);
                 break;
             }
-        }this.jogadorGanhou();// Se o tempo acabar e Jogador não morrer, Printa sobreviveu
+        }if (!jogadorMorto && relogio.isNoiteTerminou()) {
+            this.jogadorGanhou();// Se o tempo acabar e Jogador não morrer, Printa sobreviveu
+             }
+    }
+
+    // Metodo Verificar Energia e seus Efeitos
+    public void verificaEnergia() {
+        if (energy.getEnergia() <= 0){
+            // Abre todas as Portas
+            for (Door door : world.doors) {
+                door.abrirPorta();}
+            System.out.println("""
+            A Energia Acabou !!! \n
+            As luzes se apagaram e o Gerador Parou.\n
+            Sem energia o escritório mergulhou na escuridão.""");
+        }
     }
 
     // Gerar a Interface

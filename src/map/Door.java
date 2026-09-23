@@ -1,5 +1,6 @@
 // Importando Bibliotecas
 package map;
+import systems.Energy;
 
 // Iniciando a porta
 public class Door {
@@ -9,7 +10,6 @@ public class Door {
     // Construtor Porta
     public Door(int idDoor) {
         this.idDoor = idDoor;
-
     }
 
     // Metodo Abrir Porta
@@ -18,8 +18,9 @@ public class Door {
     }
 
     // Metodo Fechar Porta
-    public void fecharPorta() {
-        this.fechado = true;
+    public void fecharPorta(Energy energia) {
+        if (energia.getEnergia() > 0){
+            this.fechado = true;}
     }
 
     // Verificar Estado

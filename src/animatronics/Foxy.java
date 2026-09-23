@@ -2,8 +2,6 @@
 package animatronics;
 import map.Door;
 import map.Room;
-import java.util.ArrayList;
-import java.util.Random;
 
 public class Foxy extends Animatronics {
     protected EstadoFoxy estado;
@@ -15,8 +13,9 @@ public class Foxy extends Animatronics {
     public enum EstadoFoxy {
         FECHADO(1, "As cortinas permanecem fechadas. Apenas a placa desgastada da Pirate Cove pode ser vista."),
         ENTREABERTO(2, "As cortinas estão entreabertas. Dois olhos parecem observar através da escuridão."),
-        DIANTE_DAS_CORTINAS(3, "Foxy está diante das cortinas, imóvel. Seu olhar permanece fixo na câmera"),
-        PALCO_VAZIO(4, "As cortinas estão completamente abertas. O palco está vazio.");
+        MEIO_ABERTO(3, "As cortinas estão quase abertas. Foxy permanece imóvel, parcialmente revelado pela escuridão."),
+        DIANTE_DAS_CORTINAS(4, "Foxy está diante das cortinas, imóvel. Seu olhar permanece fixo na câmera"),
+        PALCO_VAZIO(5, "As cortinas estão completamente abertas. O palco está vazio.");
 
         private final int id;
         private final String descricao;
@@ -39,11 +38,12 @@ public class Foxy extends Animatronics {
     }
 
     // Construtor do Foxy
-    public Foxy(Room room) {
+    public Foxy(Room room, double dificuldade) {
         super(
                 "Foxy",
                 2.0,
-                "Corra... se conseguir!"
+                "Corra... se conseguir!",
+                dificuldade
         );
         this.localizacao = room;
         this.roomInicial = room;
@@ -63,6 +63,11 @@ public class Foxy extends Animatronics {
                 break;
             // Caso estiver Entreaberto, fica Diante das Cortinas
             case ENTREABERTO:
+                this.estado = EstadoFoxy.MEIO_ABERTO;
+                this.descricaoEstado = estado.getDescricao();
+                break;
+            // Caso estiver Meio Aberto, fica Diante das Cortinas
+            case MEIO_ABERTO:
                 this.estado = EstadoFoxy.DIANTE_DAS_CORTINAS;
                 this.descricaoEstado = estado.getDescricao();
                 break;
@@ -77,72 +82,72 @@ public class Foxy extends Animatronics {
         }
     }
 
+    // Lógica Desatualizar Estado
+    public void desatualizarEstados(){
+        switch (estado) {
+            // Caso estiver Diante das Cortinas, fica meio Fechado
+            case DIANTE_DAS_CORTINAS:
+                this.estado = EstadoFoxy.MEIO_ABERTO;
+                this.descricaoEstado = estado.getDescricao();
+                break;
+            // Caso estiver Meio aberto, fica Entreaberto
+            case MEIO_ABERTO:
+                this.estado = EstadoFoxy.ENTREABERTO;
+                this.descricaoEstado = estado.getDescricao();
+                break;
+            // Caso estiver Entreaberto, fica Fechado
+            case ENTREABERTO:
+                this.estado = EstadoFoxy.FECHADO;
+                this.descricaoEstado = estado.getDescricao();
+                break;
+            case FECHADO:
+                break;
+        }
+    }
+
+    // Reescrevendo o TentaMovimentar
+    @Override
+    public boolean tentaMovimentar(Door door) {
+        SituacaoMovimento situacao = getSituacaoMovimento();
+
+        return switch (situacao) {
+            case PORTA_ESQUERDA, PORTA_DIREITA -> lidarComPorta(door);
+            case NO_CAMINHO -> decisaoMovimentacao();
+            case CORRENDO -> {
+                movimentarFrente();
+                yield false;
+            }
+            case SEM_CAMINHO -> {
+                System.out.println(nome + " não possui caminho para frente.");
+                yield false;
+            }
+        };
+    }
+
     // Reescrevendo a Lógica de Movimentação do Foxy
     @Override
-    public boolean tentaMovimentar(int idNoite, Door door) throws InterruptedException {
-        // Tenta atacar
-        boolean resultadoAtacar = super.atacar(door);
+    protected boolean decisaoMovimentacao(){
+        double chanceMovimento = calcularChanceMovimento();
+        double chanceRestante = 100 - chanceMovimento;
+        double chanceParado = chanceRestante * PORCENTAGEM_CONVERTIDA_EM_CHANCE_PARADO;
 
-//        // Nova Lógica movimentação
-//        switch (resultadoAtacar) {
-//            case true:// Se está na porta e está aberta, mata
-//                return true;
-//            case false:// Senão...
-//                switch (localizacao.getNome().equals("Porta Esquerda") || localizacao.getNome().equals("Porta Direita")){
-//                    case true:// Se está na porta e está fechada, volta
-//                        System.out.println("Porta Esquerda");
-//                        return false;
-//                }
-//                return false;
-//        }
+        int porcentagem = random.nextInt(100) + 1;
 
-        // Se Matou o Jogador Encerra
-        if (resultadoAtacar) {
-            return true;
-        } else if (localizacao.getNome().equals("Porta Esquerda") || localizacao.getNome().equals("Porta Direita")){
-            // Se não matou e está na porta, volta
-            System.out.println("Foxy Bateu na Porta Esquerda");
-            this.movimentarTras();
-            return false;
-        } else if(correndo) { // Se não matou, não está na porta e está correndo, move pra frente
-                    this.movimentarFrente();
-                    return false;
-                } else{ // Se não matou, e não está na porta, e não está correndo, tenta se mover
-                // Chance de Movimentação
-                ArrayList<Room> destinos = localizacao.getComodoDepois();
-                if (destinos.isEmpty()) {
-                    System.out.println(nome + " não possui caminho para frente.");
-                    return false;
-                }
-                double agressividadeEfetiva = getAgressividadeBase() * idNoite;
-                double chanceMovimento = CHANCE_MOVIMENTACAO * 100 + agressividadeEfetiva * 3;
-                chanceMovimento = Math.min(chanceMovimento, 70);
-                Random random = new Random();
-                double chanceQueSobra = 100 - chanceMovimento;
-                double chanceDeVoltar = chanceQueSobra * 0.3;
-                // Verificar Porcentagem...
-                int porcentagem = random.nextInt(100) + 1;
-                if (porcentagem <= (int) chanceMovimento) {
-                    // Se as probabilidades forem à favor, se movimenta pra Frente
-                    this.atualizarEstados();
-//                    System.out.println(
-//                            nome + " | Local: " + localizacao.getNome()
-//                                    + " | Agressividade: " + agressividadeEfetiva
-//                                    + " | Chance: " + chanceMovimento);
-//                    System.out.println("Foxy camera: " + this.descricaoEstado);
-                    return false;
-                }else {
-                // Fica Parado
-                return false;
-            }
-        }
+        // Vai pra Frente
+        if (porcentagem <= chanceMovimento) {
+            atualizarEstados();
+            return false;}
+        // Fica Parado
+        if (porcentagem <= chanceMovimento + chanceParado) {
+            return false;}
+        // Volta
+        desatualizarEstados();
+        return false;
     }
 
     // Metodo para correr
     public void correr(){
         this.correndo = true;
-
-//        System.out.println("Foxy saiu Correndo");
     }
 
     // Reescrevendo o Movimentar para Tras do Foxy
@@ -153,16 +158,36 @@ public class Foxy extends Animatronics {
         this.localizacao = this.roomInicial;
         this.estado = EstadoFoxy.FECHADO;
         this.descricaoEstado = estado.getDescricao();
-//        System.out.println("Foxy voltou para Trá das Cortinas");
-//        System.out.println(this.getDescricaoEstado());
+    }
+
+    protected boolean lidarComPorta(Door door) {
+        // Porta fechada: Foxy não consegue atacar
+        if (door.estaFechado()) {
+            System.out.println("Foxy bateu na porta!");
+            movimentarTras();
+            return false;}
+        // Porta aberta: tenta atacar
+        return atacar(door);
+    }
+
+    // Sobreescrevendo o GetSituaçãoMovimento
+    @Override
+    public Animatronics.SituacaoMovimento getSituacaoMovimento() {
+        String nomeComodo = localizacao.getNome();
+
+        if (nomeComodo.equals(Room.TipoComodo.ESCRITORIO_PORTA_ESQUERDA.getNome())) {
+            return Animatronics.SituacaoMovimento.PORTA_ESQUERDA;}
+        if (nomeComodo.equals(Room.TipoComodo.ESCRITORIO_PORTA_DIREITA.getNome())) {
+            return Animatronics.SituacaoMovimento.PORTA_DIREITA;}
+        if (this.correndo) {
+            return Animatronics.SituacaoMovimento.CORRENDO;}
+        if (localizacao.getComodoDepois().isEmpty()) {
+            return Animatronics.SituacaoMovimento.SEM_CAMINHO;}
+        return Animatronics.SituacaoMovimento.NO_CAMINHO;
     }
 
     // GETTERs
     public String getDescricaoEstado() {
         return descricaoEstado;
-    }
-
-    public EstadoFoxy getEstado() {
-        return estado;
     }
 }

@@ -2,6 +2,8 @@
 package map;
 import animatronics.Animatronics;
 import game.Game;
+import systems.Energy;
+
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -10,6 +12,9 @@ public class Camera {
     protected ArrayList<Animatronics> animatronics;
     StringBuilder construtor;
     protected Game game;
+    protected Scanner scanner;
+    protected int ultimaCamera;
+    protected boolean cameraAtiva;
 
     // Constantes
     public static final String TEXTO_NEGRITO = "\u001B[1m";
@@ -24,11 +29,13 @@ public class Camera {
     // Construtor da Classe
     public Camera(ArrayList<Room> rooms, ArrayList<Animatronics> animatronics, Game game) {
         this.rooms = rooms;
+        this.scanner = new Scanner(System.in);
         this.animatronics = animatronics;
         this.construtor = new StringBuilder();
         this.game = game;
         this.construindoMenuCameras();
-
+        this.ultimaCamera = 1;
+        this.cameraAtiva = false;
     }
     // Criando a String das Cameras Disponíveis
     public void construindoMenuCameras(){
@@ -44,20 +51,30 @@ public class Camera {
     }
 
     // Menu das Câmeras
-    public void menuCameras(){
+    public void menuCameras(Energy energy){
         // Criando o Loop
-        Scanner entrada = new Scanner(System.in);
-        while (!game.isJogadorMorto()){// Verificando se o Jogador Morreu
+        while (!game.isJogadorMorto() && energy.getEnergia() > 0){// Verificando se o Jogador Morreu
+            // Verificar a Ultima camera
+//            if (this.ultimaCamera == Room.TipoComodo.CAVERNA_PIRATA.getIdRoom()){
+//                Animatronics foxy = animatronics.get(3);
+//                System.out.println(foxy.getDescricaoEstado()); // Se for o Foxy, manda seu Estado
+//            } else {
+//
+//            }
+            // Garantir que a camera esta ativa
+            this.cameraAtiva = true;
+
             System.out.println(construtor.toString());
-            int resultado = Integer.parseInt(entrada.nextLine());
+            int resultado = Integer.parseInt(scanner.nextLine());
             if(resultado == 0){
+                this.cameraAtiva = false;
                 game.iniciarInterfaceJogador(game.getWorld().getDoors());
             }
             // Criando um for para todos os Roons
             for (Room room : this.rooms) {
                 boolean encontrouAnimatronic = false;
                 if (resultado == room.getIdRoom()) {// Se o N° Digitado for = idRoom
-                    if (resultado == rooms.get(2).getIdRoom()) {
+                    if (resultado == Room.TipoComodo.CAVERNA_PIRATA.getIdRoom()) {
                         Animatronics foxy = animatronics.get(3);
                         System.out.println(foxy.getDescricaoEstado()); // Se for o Foxy, manda seu Estado
                         break;
@@ -89,5 +106,10 @@ public class Camera {
         }if(!encontrouAnimatronic){
             System.out.println("O Flash mostra um Corredor Escuro e Vazio...");
         }
+    }
+
+    // GETTERs
+    public boolean isCameraAtiva() {
+        return cameraAtiva;
     }
 }
